@@ -18,9 +18,14 @@ def get_all_events():
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        return data["events"]  # Danh sách các vòng đấu
+        print("Events data:", data["events"])  # In ra danh sách các vòng đấu
+        return data["events"]
     else:
+        print(f"Failed to fetch events. Status code: {response.status_code}")
         return []
+    #     return data["events"]  # Danh sách các vòng đấu
+    # else:
+    #     return []
 
 # Lấy kết quả Head to Head của một vòng đấu
 def get_h2h_matches(LEAGUE_ID, event_id):
