@@ -33,10 +33,15 @@ def get_h2h_matches(LEAGUE_ID, event_id):
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        return data["results"]  # Danh sách các trận đấu
+        print(f"H2H matches for event {event_id}:", data["results"])  # In ra kết quả các trận đấu
+        return data["results"]
     else:
         print(f"Failed to retrieve H2H matches for event {event_id}. Status code: {response.status_code}")
         return []
+    #     return data["results"]  # Danh sách các trận đấu
+    # else:
+    #     print(f"Failed to retrieve H2H matches for event {event_id}. Status code: {response.status_code}")
+    #     return []
 
 # Tính điểm cho từng người chơi trong tháng hiện tại
 
@@ -91,7 +96,7 @@ def calculate_current_month_points():
         key=lambda x: (x[1]["points"], x[1]["total_score"]),
         reverse=True
     )
-
+    print("Leaderboard data:", sorted_players)  # In ra bảng điểm
     return sorted_players
 
 
