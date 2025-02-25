@@ -19,51 +19,72 @@ def get_all_events():
         return []
 
 # Lấy kết quả Head to Head của một vòng đấu
-def get_h2h_matches(event_id):
-    url = f"https://fantasy.premierleague.com/api/leagues-h2h-matches/league/{LEAGUE_ID}/?event={event_id}"
+def get_h2h_matches(LEAGUE_ID, event_id):
+    url = f"https://fantasy.premierleague.com/api/leagues-h2h-matches/league/{LEAGUE_ID }/?event={event_id}"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
         return data["results"]  # Danh sách các trận đấu
     else:
+        print(f"Failed to retrieve H2H matches for event {event_id}. Status code: {response.status_code}")
         return []
 
 # Tính điểm cho từng người chơi trong tháng hiện tại
+
+
 def calculate_current_month_points():
-    events = get_all_events()
-    player_points = defaultdict(lambda: {"points": 0, "total_score": 0})
-
     # Lấy tháng và năm hiện tại
-    now = datetime.now()
-    current_month = now.month
-    current_year = now.year
+    current_month = datetime.now().month
+    current_year = datetime.now().year
 
+    # Lấy danh sách các vòng đấu
+    events = get_all_events()
+
+    # Lọc các vòng đấu trong tháng hiện tại
+    current_month_events = []
     for event in events:
         event_date = datetime.strptime(event["deadline_time"], "%Y-%m-%dT%H:%M:%SZ")
         if event_date.month == current_month and event_date.year == current_year:
-            event_id = event["id"]
-            is_event_past = event_date < datetime.now()  # Kiểm tra xem vòng đấu đã diễn ra chưa
+            current_month_events.append(event)
 
-            matches = get_h2h_matches(event_id)
-            for match in matches:
-                entry_1 = match["entry_1_name"]  # Tên đội 1
-                entry_2 = match["entry_2_name"]  # Tên đội 2
-                entry_1_points = match["entry_1_points"]  # Điểm của đội 1
-                entry_2_points = match["entry_2_points"]  # Điểm của đội 2
-                entry_1_total_score = match["entry_1_total_score"]  # Tổng điểm của đội 1
-                entry_2_total_score = match["entry_2_total_score"]  # Tổng điểm của đội 2
+    # Tính điểm cho từng người chơi
+    player_points = defaultdict(lambda: {"points": 0, "total_score": 0})
 
-                # Cập nhật điểm cho đội 1
-                player_points[entry_1]["points"] += entry_1_points
-                player_points[entry_1]["total_score"] += entry_1_total_score
+    for event in current_month_events:
+        event_id = event["id"]
+        event_date = datetime.strptime(event["deadline_time"], "%Y-%m-%dT%H:%M:%SZ")
+        is_event_past = event_date < datetime.now()  # Kiểm tra xem vòng đấu đã diễn ra chưa
 
-                # Cập nhật điểm cho đội 2
-                player_points[entry_2]["points"] += entry_2_points
-                player_points[entry_2]["total_score"] += entry_2_total_score
+        matches = get_h2h_matches(LEAGUE_ID, event_id)
+        for match in matches:
+            entry_1 = match.get("entry_1_name", "Unknown Team 1")  # Tên đội 1
+            entry_2 = match.get("entry_2_name", "Unknown Team 2")  # Tên đội 2
+            score_1 = match.get("entry_1_points", 0)  # Điểm của đội 1
+            score_2 = match.get("entry_2_points", 0)  # Điểm của đội 2
 
-    # Sắp xếp bảng xếp hạng theo điểm giảm dần
-    sorted_leaderboard = sorted(player_points.items(), key=lambda x: x[1]["points"], reverse=True)
-    return sorted_leaderboard
+            # Cập nhật tổng điểm (total_score)
+            player_points[entry_1]["total_score"] += score_1
+            player_points[entry_2]["total_score"] += score_2
+
+            # Chỉ tính điểm thắng, hòa, thua nếu vòng đấu đã diễn ra
+            if is_event_past:
+                if score_1 > score_2:
+                    player_points[entry_1]["points"] += 3
+                elif score_1 < score_2:
+                    player_points[entry_2]["points"] += 3
+                else:
+                    player_points[entry_1]["points"] += 1
+                    player_points[entry_2]["points"] += 1
+
+    # Sắp xếp bảng điểm theo điểm giảm dần, nếu bằng nhau thì theo tổng điểm giảm dần
+    sorted_players = sorted(
+        player_points.items(),
+        key=lambda x: (x[1]["points"], x[1]["total_score"]),
+        reverse=True
+    )
+
+    return sorted_players
+
 
 # Lấy kết quả H2H của vòng đấu mới nhất
 def get_latest_h2h_results():
@@ -78,7 +99,7 @@ def get_latest_h2h_results():
 
     if latest_event:
         event_id = latest_event["id"]
-        matches = get_h2h_matches(event_id)
+        matches = get_h2h_matches(LEAGUE_ID, event_id)
         return matches
     else:
         return []
@@ -97,8 +118,23 @@ def leaderboard():
 # API để lấy kết quả H2H của vòng đấu mới nhất
 @app.route("/api/latest_h2h")
 def latest_h2h():
-    h2h_results = get_latest_h2h_results()
-    return jsonify(h2h_results)
+    events = get_all_events()
+    now = datetime.now()
+    latest_event = None
+
+    # Tìm vòng đấu mới nhất đã kết thúc
+    for event in events:
+        event_date = datetime.strptime(event["deadline_time"], "%Y-%m-%dT%H:%M:%SZ")
+        if event_date < now:
+            latest_event = event
+        else:
+            break
+
+    if latest_event:
+        matches = get_h2h_matches(LEAGUE_ID, latest_event["id"])
+        return jsonify(matches)
+    else:
+        return jsonify([])
 
 if __name__ == "__main__":
     app.run(debug=True)
