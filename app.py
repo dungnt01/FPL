@@ -3,7 +3,11 @@ import requests
 from datetime import datetime
 from collections import defaultdict
 
+# app = Flask(__name__)
+from flask_cors import CORS
+
 app = Flask(__name__)
+CORS(app)
 
 # Thông tin giải đấu
 LEAGUE_ID = 445763  # ID của giải đấu của bạn
