@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng xếp hạng Fantasy League</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Bảng xếp hạng Fantasy League - Tháng <span id="current-month"></span></h1>
+    <table id="leaderboard">
+        <thead>
+            <tr>
+                <th>Vị trí</th>
+                <th>Người chơi</th>
+                <th>Điểm</th>
+                <th>Tổng điểm (Hệ số phụ)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dữ liệu sẽ được cập nhật bằng JavaScript -->
+        </tbody>
+    </table>
+
+    <h2>Kết quả H2H của vòng đấu mới nhất</h2>
+    <table id="latest-h2h">
+        <thead>
+            <tr>
+                <th>Đội 1</th>
+                <th>Điểm</th>
+                <th>Đội 2</th>
+                <th>Điểm</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dữ liệu sẽ được cập nhật bằng JavaScript -->
+        </tbody>
+    </table>
+
+    <script>
+        // Hàm để hiển thị tháng hiện tại
+        function displayCurrentMonth() {
+            const months = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+            const now = new Date();
+            const currentMonth = months[now.getMonth()];
+            document.getElementById("current-month").textContent = currentMonth;
+        }
+
+        // Hàm cập nhật bảng xếp hạng
+        function updateLeaderboard() {
+            fetch("/api/leaderboard")
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector("#leaderboard tbody");
+                    tbody.innerHTML = ""; // Xóa dữ liệu cũ
+
+                    data.forEach(([player, stats], index) => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${player}</td>
+                            <td>${stats.points}</td>
+                            <td>${stats.total_score}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                });
+        }
+
+        // Hàm cập nhật kết quả H2H của vòng đấu mới nhất
+        function updateLatestH2H() {
+            fetch("/api/latest_h2h")
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector("#latest-h2h tbody");
+                    tbody.innerHTML = ""; // Xóa dữ liệu cũ
+
+                    data.forEach(match => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${match["entry_1_name"]}</td>
+                            <td>${match["entry_1_points"]}</td>
+                            <td>${match["entry_2_name"]}</td>
+                            <td>${match["entry_2_points"]}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                });
+        }
+
+        // Cập nhật dữ liệu mỗi 5 giây
+        setInterval(() => {
+            updateLeaderboard();
+            updateLatestH2H();
+        }, 5000);
+
+        // Cập nhật lần đầu khi trang được tải
+        displayCurrentMonth();
+        updateLeaderboard();
+        updateLatestH2H();
+    </script>
+</body>
+</html>
