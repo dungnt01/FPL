@@ -20,7 +20,7 @@ def get_all_events():
 
 # Lấy kết quả Head to Head của một vòng đấu
 def get_h2h_matches(LEAGUE_ID, event_id):
-    url = f"https://fantasy.premierleague.com/api/leagues-h2h-matches/league/{LEAGUE_ID }/?event={event_id}"
+    url = f"https://fantasy.premierleague.com/api/leagues-h2h-matches/league/{LEAGUE_ID}/?event={event_id}"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
@@ -137,4 +137,4 @@ def latest_h2h():
         return jsonify([])
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
