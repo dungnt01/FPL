@@ -51,45 +51,62 @@
 
         // Hàm cập nhật bảng xếp hạng
         function updateLeaderboard() {
-            fetch("/api/leaderboard")
-                .then(response => response.json())
-                .then(data => {
-                    const tbody = document.querySelector("#leaderboard tbody");
-                    tbody.innerHTML = ""; // Xóa dữ liệu cũ
+    fetch("/api/leaderboard")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Lỗi khi tải dữ liệu bảng xếp hạng");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const tbody = document.querySelector("#leaderboard tbody");
+            tbody.innerHTML = ""; // Xóa dữ liệu cũ
 
-                    data.forEach(([player, stats], index) => {
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${index + 1}</td>
-                            <td>${player}</td>
-                            <td>${stats.points}</td>
-                            <td>${stats.total_score}</td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                });
-        }
+            data.forEach(([player, stats], index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${player}</td>
+                    <td>${stats.points}</td>
+                    <td>${stats.total_score}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error(error);
+            alert(error.message);
+        });
+}
 
-        // Hàm cập nhật kết quả H2H của vòng đấu mới nhất
-        function updateLatestH2H() {
-            fetch("/api/latest_h2h")
-                .then(response => response.json())
-                .then(data => {
-                    const tbody = document.querySelector("#latest-h2h tbody");
-                    tbody.innerHTML = ""; // Xóa dữ liệu cũ
+function updateLatestH2H() {
+    fetch("/api/latest_h2h")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Lỗi khi tải dữ liệu H2H");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const tbody = document.querySelector("#latest-h2h tbody");
+            tbody.innerHTML = ""; // Xóa dữ liệu cũ
 
-                    data.forEach(match => {
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${match["entry_1_name"]}</td>
-                            <td>${match["entry_1_points"]}</td>
-                            <td>${match["entry_2_name"]}</td>
-                            <td>${match["entry_2_points"]}</td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                });
-        }
+            data.forEach(match => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${match["entry_1_name"]}</td>
+                    <td>${match["entry_1_points"]}</td>
+                    <td>${match["entry_2_name"]}</td>
+                    <td>${match["entry_2_points"]}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => {
+            console.error(error);
+            alert(error.message);
+        });
+}
 
         // Cập nhật dữ liệu mỗi 5 giây
         setInterval(() => {
